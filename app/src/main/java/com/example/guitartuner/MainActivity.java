@@ -78,9 +78,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 isActive = false;
-                recorder.stop();
-                recorder.release();
-                recorder = null;
+                if (recorder != null) {
+                    recorder.stop();
+                    recorder.release();
+                    recorder = null;
+                } 
             }
         });
 
@@ -140,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void getMicPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-            ==PackageManager.PERMISSION_DENIED) {
+                ==PackageManager.PERMISSION_DENIED) {
             ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.RECORD_AUDIO}, MIC_PERMISSION_CODE);
         }
     }
