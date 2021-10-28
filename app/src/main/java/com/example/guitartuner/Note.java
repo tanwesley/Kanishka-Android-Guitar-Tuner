@@ -1,10 +1,11 @@
 package com.example.guitartuner;
 
 public class Note {
-    //final double CONCERT_PITCH = 440;
     private float frequency;
     private float nearestFrequency;
-    private float offset;
+    float hzPerCent;
+    private float offsetHz;
+    private float offsetCents;
     private String noteName;
 
 
@@ -47,16 +48,35 @@ public class Note {
 
         nearestFrequency = frequenciesArray[frequencyIndex];
         noteName = notesArray[frequencyIndex % notesArray.length];
+
+        // calculate ratio of hz/cent in between semitones based on adjacent notes
+        // there are 100 cents in between each semitone/half-step
+        if (frequency > nearestFrequency) {
+            hzPerCent = (nearestFrequency - frequenciesArray[frequencyIndex+1])/100;
+        } else if (frequency < nearestFrequency) {
+            hzPerCent = (frequenciesArray[frequencyIndex-1] - nearestFrequency)/100;
+        }
+
+    }
+
+    public float getOffsetHz() {
+        offsetHz = frequency - nearestFrequency;
+        return offsetHz;
+    }
+
+    public float getOffsetCents() {
+        float offsetHz = getOffsetHz();
+        offsetCents = offsetHz / hzPerCent;
+        return offsetCents;
     }
 
 
-    public float getOffset() {
-        return frequency - nearestFrequency;
-    }
 
     public float getFrequency() {
         return this.frequency;
     }
+
+
 
     public String getNoteName() {
         return this.noteName;

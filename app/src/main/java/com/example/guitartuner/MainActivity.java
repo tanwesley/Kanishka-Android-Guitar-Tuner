@@ -6,7 +6,9 @@ import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.view.WindowManager;
 import android.widget.TextView;
 
 import com.example.guitartuner.R;
@@ -30,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         if (isMicPresent()) {
             getMicPermission();
@@ -64,17 +66,31 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void processPitch(float pitchInHz) {
-        note = new Note(pitchInHz);
-        note.findNearestNote();
 
-        noteText.setText(note.getNoteName());
-        frequencyText.setText("Frequency: " + note.getFrequency());
-        offsetText.setText("Offset: " + note.getOffset());
+        if (pitchInHz < 0) {
+            noteText.setText("");
+            frequencyText.setText("Frequency: ");
+            offsetText.setText("Offset: ");
+        } else {
+            note = new Note(pitchInHz);
+            note.findNearestNote();
+
+            noteText.setText(note.getNoteName());
+            frequencyText.setText(String.format("Frequency: %.2f hz", note.getFrequency()));
+            offsetText.setText(String.format("Offset: %.2f cents \n%.2f hz", note.getOffsetCents(), note.getOffsetHz()));
+
+            if (Math.abs(note.getOffsetCents()) <= 6) {
+                noteText.setTextColor(Color.parseColor("#00FF00"));
+            } else {
+                noteText.setTextColor(Color.parseColor("#FF0000"));
+            }
+        }
 
     }
 
 
 
+    // Methods to check for mic and get permissions to use mic
     private boolean isMicPresent() {
         if (this.getPackageManager().hasSystemFeature(PackageManager.FEATURE_MICROPHONE)) {
             return true;
