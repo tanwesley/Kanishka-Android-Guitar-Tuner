@@ -5,132 +5,75 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
-import android.app.Activity;
-import android.content.ContextWrapper;
 import android.content.pm.PackageManager;
-import android.media.MediaPlayer;
-import android.media.MediaRecorder;
 import android.os.Bundle;
-import android.os.Environment;
-import android.os.Handler;
-import android.provider.MediaStore;
-import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import java.io.File;
+import com.example.guitartuner.R;
+
+import be.tarsos.dsp.AudioDispatcher;
+import be.tarsos.dsp.AudioEvent;
+import be.tarsos.dsp.AudioProcessor;
+import be.tarsos.dsp.io.android.AudioDispatcherFactory;
+import be.tarsos.dsp.pitch.PitchDetectionHandler;
+import be.tarsos.dsp.pitch.PitchDetectionResult;
+import be.tarsos.dsp.pitch.PitchProcessor;
 
 public class MainActivity extends AppCompatActivity {
 
-    TextView noteText;
-    boolean isActive;
-    Button startButton, stopButton;
-    Button testPlaybackButton;
-    double test_freq = 0;
-    Note note;
-
-    MediaRecorder recorder;
-    MediaPlayer player;
-
     private static int MIC_PERMISSION_CODE = 200;
+
+    TextView frequencyText, noteText, offsetText;
+    Note note;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
         if (isMicPresent()) {
             getMicPermission();
         }
 
+        frequencyText = findViewById(R.id.frequencyText);
+        noteText = findViewById(R.id.noteText);
+        offsetText = findViewById(R.id.offsetText);
 
-        noteText = findViewById(R.id.noteView);
-        startButton = findViewById(R.id.start_button);
-        stopButton = findViewById(R.id.stop_button);
+        AudioDispatcher dispatcher =
+                AudioDispatcherFactory.fromDefaultMicrophone(22050,1024,0);
 
-        testPlaybackButton = findViewById(R.id.testPlaybackButton);
-
-        startButton.setOnClickListener(new View.OnClickListener() {
+        PitchDetectionHandler pdh = new PitchDetectionHandler() {
             @Override
-            public void onClick(View view) {
-                isActive = true;
-
-                try {
-                    recorder = new MediaRecorder();
-                    recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-                    recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-                    recorder.setOutputFile(getRecordingFilePath());
-                    recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-                    recorder.prepare();
-                    recorder.start();
-
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                tune();
-            }
-        });
-
-        stopButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                isActive = false;
-                if (recorder != null) {
-                    recorder.stop();
-                    recorder.release();
-                    recorder = null;
-                } 
-            }
-        });
-
-        testPlaybackButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                // test if audio record is working
-
-                try {
-                    player = new MediaPlayer();
-                    player.setDataSource(getRecordingFilePath());
-                    player.prepare();
-                    player.start();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-            }
-        });
-
-    }
-
-
-    public void tune() {
-        if (isActive) {
-            note = new Note(test_freq);
-            note.findNearestNote();
-            noteText.setText("FREQUENCY: "+ note.getFrequency() +"\nNOTE: " + note.getNoteName() + String.format("\nOFFSET: %.2f", note.getOffset()));
-            test_freq++;
-            note = null;
-            refresh(100);
-        } else {
-            test_freq = 0;
-        }
-    }
-
-    private void refresh(int ms) {
-        final Handler handler = new Handler();
-
-        final Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                tune();
+            public void handlePitch(PitchDetectionResult res, AudioEvent e){
+                final float pitchInHz = res.getPitch();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        processPitch(pitchInHz);
+                    }
+                });
             }
         };
+        AudioProcessor pitchProcessor = new PitchProcessor(PitchProcessor.PitchEstimationAlgorithm.FFT_YIN, 22050, 1024, pdh);
+        dispatcher.addAudioProcessor(pitchProcessor);
 
-        handler.postDelayed(runnable, ms);
+        Thread audioThread = new Thread(dispatcher, "Audio Thread");
+        audioThread.start();
+
     }
+
+    public void processPitch(float pitchInHz) {
+        note = new Note(pitchInHz);
+        note.findNearestNote();
+
+        noteText.setText(note.getNoteName());
+        frequencyText.setText("Frequency: " + note.getFrequency());
+        offsetText.setText("Offset: " + note.getOffset());
+
+    }
+
+
 
     private boolean isMicPresent() {
         if (this.getPackageManager().hasSystemFeature(PackageManager.FEATURE_MICROPHONE)) {
@@ -146,12 +89,4 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.RECORD_AUDIO}, MIC_PERMISSION_CODE);
         }
     }
-
-    private String getRecordingFilePath() {
-        ContextWrapper contextWrapper = new ContextWrapper(getApplicationContext());
-        File directory = contextWrapper.getExternalFilesDir(Environment.DIRECTORY_MUSIC);
-        File file = new File(directory, "testFile" + ".mp3");
-        return file.getPath();
-    }
-
 }
