@@ -21,7 +21,7 @@ public class Note {
             41.2034f, 38.8909f, 36.7081f, 34.6478f, 32.7032f, 30.8677f, 29.1352f, 27.5000f, 25.9565f, 24.4997f,
             23.1247f, 21.8268f, 20.6017f, 19.4454f, 18.3540f, 17.3239f, 16.3516f};
 
-    private final String[] notesArray = new String[]{"F", "E", "D#", "D", "C#", "C", "B", "A#", "A", "G#", "G", "F"};
+    private final String[] notesArray = new String[]{"F", "E", "D#", "D", "C#", "C", "B", "A#", "A", "G#", "G", "F#"};
 
 
 
