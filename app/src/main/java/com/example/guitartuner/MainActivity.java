@@ -5,11 +5,13 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.WindowManager;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.guitartuner.R;
 
@@ -20,10 +22,15 @@ import be.tarsos.dsp.io.android.AudioDispatcherFactory;
 import be.tarsos.dsp.pitch.PitchDetectionHandler;
 import be.tarsos.dsp.pitch.PitchDetectionResult;
 import be.tarsos.dsp.pitch.PitchProcessor;
+import pl.pawelkleczkowski.customgauge.CustomGauge;
 
 public class MainActivity extends AppCompatActivity {
 
     private static int MIC_PERMISSION_CODE = 200;
+
+    private int backButtonCount = 0;
+
+    private CustomGauge gauge;
 
     TextView frequencyText, noteText, offsetText;
     Note note;
@@ -37,6 +44,9 @@ public class MainActivity extends AppCompatActivity {
         if (isMicPresent()) {
             getMicPermission();
         }
+
+        gauge = findViewById(R.id.gauge1);
+
 
         frequencyText = findViewById(R.id.frequencyText);
         noteText = findViewById(R.id.noteText);
@@ -62,25 +72,33 @@ public class MainActivity extends AppCompatActivity {
 
         Thread audioThread = new Thread(dispatcher, "Audio Thread");
         audioThread.start();
-
     }
+
+
 
     public void processPitch(float pitchInHz) {
 
         if (pitchInHz < 0) {
             noteText.setText("");
             frequencyText.setText("Frequency: ");
-            offsetText.setText("Offset: ");
+            offsetText.setText("");
+            gauge.setValue(25);
         } else {
             note = new Note(pitchInHz);
             note.findNearestNote();
 
             noteText.setText(note.getNoteName());
             frequencyText.setText(String.format("Frequency: %.2f hz", note.getFrequency()));
-            offsetText.setText(String.format("Offset: %.2f cents \n%.2f hz", note.getOffsetCents(), note.getOffsetHz()));
+            if (note.getOffsetCents() >= 0) {
+                offsetText.setText(String.format("+%.2f cents", note.getOffsetCents()));
+            } else {
+                offsetText.setText(String.format("%.2f cents", note.getOffsetCents()));
+            }
+            gauge.setValue((int) (25 + note.getOffsetCents()));
 
-            if (Math.abs(note.getOffsetCents()) <= 6) {
+            if (Math.abs(note.getOffsetCents()) < 6) {
                 noteText.setTextColor(Color.parseColor("#00FF00"));
+                gauge.setValue(25);
             } else {
                 noteText.setTextColor(Color.parseColor("#FF0000"));
             }
@@ -88,7 +106,22 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-
+    @Override
+    public void onBackPressed() {
+        if(backButtonCount >= 1)
+        {
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.addCategory(Intent.CATEGORY_HOME);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
+        }
+        else
+        {
+            Toast.makeText(this, "Press back again to close application", Toast.LENGTH_SHORT).show();
+            backButtonCount++;
+        }
+    }
 
     // Methods to check for mic and get permissions to use mic
     private boolean isMicPresent() {
