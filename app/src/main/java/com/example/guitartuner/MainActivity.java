@@ -88,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
             note.findNearestNote();
 
             noteText.setText(note.getNoteName());
-            frequencyText.setText(String.format("Frequency: %.2f hz", note.getFrequency()));
+            frequencyText.setText(String.format("Frequency:\n%.2f hz", note.getFrequency()));
             if (note.getOffsetCents() >= 0) {
                 offsetText.setText(String.format("+%.2f cents", note.getOffsetCents()));
             } else {

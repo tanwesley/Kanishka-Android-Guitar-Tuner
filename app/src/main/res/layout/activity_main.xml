@@ -71,4 +71,14 @@
         app:layout_constraintTop_toBottomOf="@+id/gauge1"
         app:layout_constraintVertical_bias="0.0" />
 
+    <TextView
+        android:id="@+id/concertPitchView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:text="Concert Pitch = A440"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
