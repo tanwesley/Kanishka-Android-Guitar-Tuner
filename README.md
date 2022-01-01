@@ -1,4 +1,4 @@
-# Android-Guitar-Tuner
+# KANISHKA GUITAR TUNER FOR ANDROID
 A simple guitar tuner application for Android
 
 Play Store link for application:
